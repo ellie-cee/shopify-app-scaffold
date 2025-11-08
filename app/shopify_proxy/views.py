@@ -42,31 +42,3 @@ def contactForm(request):
         "contact.html",
         content_type=responseContentType(request)
     )
-    
-@csrf_exempt
-def sendContact(request):
-    payload = getJsonPayload(request)
-    
-    try:
-        message = sendEmail(
-            recipient="cassadyeleanor@gmail.com",
-            subject=f"New Inquiry from {payload.get('name')}",
-            context=payload,
-            templatePrefix="contact-notification",
-            replyTo=payload.get("email"),
-        )
-    except:
-        logger.error(traceback.format_exc())
-        return jsonResponse(
-            {
-                "message":"error!"
-            },
-        
-            204
-        )
-    return jsonResponse(
-        {
-            "message":"hooray",
-        },
-        200
-    )
