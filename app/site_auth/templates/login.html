@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content%}
+<script src="/static/js/login.js"></script>
+<style type="text/css">
+    input[name="authCode"] {
+        font-size:32px!important    ;
+        width: 256px;
+    }
+</style>
+<div class="centered">
+    
+    <div class="jsapp loginForm"></div>
+</div>
+
+<script>
+    const loginForm = new Login({loginState:"{{ request.session.AUTHORIZATION_REQUEST }}",redirectTo:"{{ request.get_full_path }}"})
+</script>
+{% endblock %}

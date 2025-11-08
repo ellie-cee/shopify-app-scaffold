@@ -1,0 +1,8 @@
+
+Hi, {{ user.name }}
+To continue logging in enter the following code into the login form:
+
+{{authCode}}
+
+If you have not requested this code. please contact your site administrator.
+

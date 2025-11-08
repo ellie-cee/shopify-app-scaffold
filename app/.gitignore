@@ -1,0 +1,10 @@
+.env
+*.pyc
+*.sql
+app/uwsgi.ini
+Pipfile.lock
+*.log
+app/staticfiles/*
+tmp
+**/migrations/*
+app/html

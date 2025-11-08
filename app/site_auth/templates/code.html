@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="centered">
+    <div class="login">
+        <div><h1>Please enter the code that was sent to {{ user.censoredEmail }}</h1></div>
+        <form action="/code/validate" method="post">
+            <div>
+                <input type="text" name="authCode" placeholer="Verification Code" required="true">
+                <button type="submit">Submit</button>
+            </div>
+            {% include "csrf_token.html" %}
+        </form>
+        {% if error %}
+            <div class="error_message">{{ error }}</div>
+        {% endif %}
+        <div><a href="/code/resend">resend code</div>
+    </div>
+</div>
+{% endblock %}
+{% block title %}
+Login
+{% endblock %}

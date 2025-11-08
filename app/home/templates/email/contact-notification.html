@@ -1,0 +1,33 @@
+{% extends "email/base.html" %}
+{% block content %}
+<style type="text/css">
+    .details {
+        display:flex;
+        justify-content: space-around;
+    }
+    .details-holder {
+        margin-top:64px;
+    }
+    .message {
+        margin: 32px;
+        padding:16px;
+    }
+</style>
+Hey bitch, you have a new contact request:
+
+<div class="details-holder">
+    <div class="details">
+        <div>From</div>
+        <div>{{ name }} (<a href="mailto:{{ email }}">({{ email }})</a>
+    </div>
+    <div class="details">
+        <div>Purpose</div>
+        <div>{{ purpose }}</div>
+    </div>
+    <div>Message</div>
+    <div class="message">
+        <pre>
+            {{ message }}
+        </pre>
+    </div>
+{% endblock %}

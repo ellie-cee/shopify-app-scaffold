@@ -1,0 +1,54 @@
+<html>
+    <head>
+        <style type="text/css">
+            .xyz-header {
+                background-color: #008B8B;
+                padding: 12px;
+            }
+            .xyz-header img {
+                height:64px;
+            }
+            .main-email-content: {
+                width:85%;
+                color: #1b5858ff;
+                background-color: #ffffff;
+                font-size: 18px;
+                margin-top:32px;
+                margin-bottom:32px;
+                padding:16px;
+            }
+
+            .body {
+                background-color: #c1ffff55;
+                width:100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap:32px;
+            }
+            .footer {
+                background-color: #ffffff;
+                color: #000000;
+                text-align: center;
+                font-weight: 800;
+                font-size:12px;
+                padding: 8px;
+            }
+        </style>
+    </head>
+<body>
+    <div class="xyz-header">
+        <img src="https://abc.apps.elliecee.xyz/static/img/logo.png" class="">
+    </div>
+    <div class="body" style="justify-content:center;align-items:center;">
+        <div class="main-email-content" style="margin: auto;width:95%;color: #1b5858ff;background-color: #ffffff;font-size: 18px;margin-top:16px;margin-bottom:16px;padding:16px;">
+            {% block content %}
+            sup
+            {% endblock %}
+        </div>
+    </div>
+    <div class="footer">
+        © {{ year }} Eleanor Cassady • https://abc.elliecee.xyz • cassadyeleanor@gmail.com
+    </div>
+</body>
+</html>

@@ -1,0 +1,24 @@
+
+<html>
+    <head>
+        <style type="text/css">
+            .body {
+                background-color: #FAEBA7;
+                padding:64px;
+                
+                justify-content:center;
+                align-items: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="body">
+<h2>Hi, {{ user.name }}</h2>
+<div>To continue logging in enter the following code into the login form:</div>
+<h1>{{authCode}}</h1>
+<div>If you have not requested this code. please contact your site administrator.</div>
+        </div>
+    </body>
+
+</html>
+

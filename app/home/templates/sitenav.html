@@ -1,0 +1,7 @@
+<ul class="sidebar-menu">
+    
+    <li class="header">Options</li>
+    {% for item in sidebarNav %}
+        <li><a href="{{ item.url }}">{{ item.label }}</a></li>
+    {% endfor %}
+</ul>
