@@ -2,16 +2,22 @@ import math
 import urllib.error
 import shopify
 import json
+from home.lmno import *
 import logging
 import urllib
 import time
 import signal
 import http.client
-import sys
 import traceback
 logger = logging.getLogger(__name__)
-from home.lmno import SearchableDict
 
+def sigInt(signal,frame):
+    sys.exit()
+
+signal.signal(signal.SIGINT,sigInt)
+
+def log(message):
+    print(message,flush=True)
 
 class GqlReturn(SearchableDict):
     def errors(self,dump=False):
@@ -62,7 +68,8 @@ class GqlReturn(SearchableDict):
         errors = self.findErrors(self.data)
         if errors is not None:
             for error in errors:
-                if "Too many attempts" in error.get("message"):
+                
+                if "Too many attempts" in error.get("message",error.get("code")):
                     return True
         return False
     def getDataRoot(self):
@@ -81,6 +88,8 @@ class GqlReturn(SearchableDict):
         if "Unauthorized" in self.errorMessages():
             return True
         return False
+    def asGql(self,path):
+        return GqlReturn(self.search(path))
 
 
 def log(message):
@@ -143,7 +152,10 @@ def catchNetWorkError(fn):
                 time.sleep(3)
             except KeyboardInterrupt:
                 sys.exit()
-                
+            except SystemExit:
+                sys.exit()
+            
+    
             except Exception as e:
                 traceback.print_exc()
                 logger.error(e.__class__)
@@ -164,14 +176,16 @@ class GraphQL:
         self.debuggingIndent = level
         
     @catchNetWorkError    
-    def run(self,query,variables={},searchable=True,throttle=5000):
-        print("run")
+    def run(self,query,variables={},searchable=True,throttle=5000) -> GqlReturn:
         retVal = None
         ret = None
         try:
             jsonReturn = shopify.GraphQL().execute(query,variables)
             ret = json.loads(jsonReturn)
-            
+        except SystemExit:
+            sys.exit()    
+        except KeyboardInterrupt:
+            sys.exit()
         except:
             traceback.print_exc()
             
@@ -218,14 +232,11 @@ class GraphQlIterable(GraphQL):
             raise StopIteration
         self.params["after"] = self.cursor
         ret = self.run(self.query,self.params)
-        
-        ret.dump()
         if ret.get("data") is not None:
             try:
                 self.dataroot = f'data.{next(iter(ret.search("data").keys()),None)}'
             except:
                 ret.dump()
-                sys.exit()
         
         
         values = [GqlReturn(x) for x in ret.search(f"{self.dataroot}.nodes",[])]
