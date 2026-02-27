@@ -63,24 +63,32 @@ class LoginProtection(object):
         session = self.getSession(request)
         api_version = apps.get_app_config('shopify_sites').SHOPIFY_API_VERSION
         if session.get("shopify") is None:
-            if os.getenv("SHOPIFY_TOKEN"):
-                session["shopify"] = {
-                    "shop_url":f'{os.getenv("SHOPIFY_DOMAIN")}',
-                    "access_token":os.getenv("SHOPIFY_TOKEN")
-                }
+            if os.getenv("LOCALDEV"):
+                try:
+                    shopifySite = ShopifySite.objects.filter(shopDomain=os.getenv("LOCALDEV")).first()
+                    session["shopify"] = {
+                        "shop_url":shopifySite.shopDomain,
+                        "shopId":shopifySite.id,
+                        "access_token":shopifySite.token()
+                    }
+                except:
+                    pass
             elif self.sessionType == "transient":
-                print(self.sessionKey)
                 site = ShopifySite.objects.get(shopHost=self.sessionKey)
                 session["shopify"] = {
                     "shop_url":f"{site.shopDomain}",
+                    "shopId":site.id,
                     "access_token":site.accessToken
                 }
+                
             elif request.GET.get("shop") is not None and request.GET.get("embedded") is not None:
                 site = ShopifySite.objects.get(shopDomain=request.GET.get("shop"))
                 session["shopify"] = {
                     "shop_url":f"{site.shopDomain}",
-                    "access_token":site.accessToken
+                    "shopId":site.id,
+                    "access_token":site.token()
                 }
+                print(f"shopifySite {str(session["shopify"])}")
         
         if session.get("shopify") is not None:
             session["shopify"]["shop_url"] = session["shopify"]["shop_url"].split("/")[0]

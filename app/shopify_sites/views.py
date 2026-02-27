@@ -1,3 +1,4 @@
+from datetime import datetime,timedelta
 import json
 import traceback
 from django.shortcuts import render, redirect
@@ -8,13 +9,14 @@ from django.apps import apps
 import hmac, base64, hashlib, binascii, os
 import logging
 import shopify
+from .models import ShopifySite
 
 
 
 logger = logging.Logger(__name__)
 
 
-def _new_session(shop_url):
+def _new_session(shop_url) -> shopify.Session:
     api_version = apps.get_app_config('shopify_sites').SHOPIFY_API_VERSION
     session = shopify.Session(shop_url, api_version)
     return session
@@ -72,6 +74,13 @@ def finalize(request):
             "shop_url": shop_url,
             "access_token": session.request_token(request.GET)
         }
+        shopifySite,created = ShopifySite.objects.get_or_create(shopHost=shop_url)
+        if created:
+            shopifySite.shopDomain = shop_url
+            shopifySite.accessToken = session.request_token(request.GET)
+            shopifySite.accessTokenExpires = datetime.now()+timedelta(minutes=86390)
+            shopifySite.shopDetails()
+
         
             
     except Exception as e:

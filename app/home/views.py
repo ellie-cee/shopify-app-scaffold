@@ -1,4 +1,5 @@
 import os
+import traceback
 from django.shortcuts import render,redirect
 from django.template.loader import render_to_string
 from site_auth.decorators import requiresLogin
@@ -25,13 +26,7 @@ import pathlib
 import pymupdf
 
 
-# Create your views here.
-
-
-
-
-def dashboard(request):
-    
+def dashboard(request):    
     print(request.session.get("dewqdewq"))
     return render(
         request,
@@ -67,10 +62,7 @@ def getJsonPayload(request):
     return json.loads(request.body.decode("utf-8"))
 
 def install(request):
-    shopifySite,created = ShopifySite.objects.get_or_create(shopDomain=request.session["shopify"].get("shop_url"))
-    if created:
-        shopifySite.accessToken = request.session["shopify"].get("access_token")
-        details = shopifySite.shopDetails()
+    
     return redirect("/shopify/home")
 
 def testFake(request):
@@ -107,7 +99,6 @@ def showTagForm(request):
 
 
 @csrf_exempt
-
 def tagResume(request):
     
     applicationVariant,created = ApplicationVariant.objects.get_or_create(name=request.POST.get("name"))
@@ -124,16 +115,76 @@ def tagResume(request):
     )
     
     
+@csrf_exempt
+def getQuote(request):
+
+    files = request.FILES.getlist("uploads")
+    content = request.POST
+    fileNames = []
+    for file in files:
+        filePath = os.path.join(
+            settings.STATIC_ROOT,
+            file.name,
+        )
+        with open(filePath,"wb") as outputFile:
+            outputFile.write(file.read())
+        fileNames.append(f"https://abc.apps.elliecee.xyz/static/{file.name}")
+    logger.error(fileNames)
+    context = {
+        "name":content.get("name"),
+        "email":content.get("email"),
+        "message":content.get("message"),
+        "files":fileNames,
+        "tasks":json.loads(content.get("details"))
+    }
+    result:EmailStatus = sendEmail(
+        recipient="cassadyeleanor@gmail.com",
+        subject=f"Quote Request from {context.get("name")} ",
+        context=context,
+        sender="ellie@elliecee.xyz",
+        templatePrefix="getQuote",
+        replyTo=content.get("email")
+    )
+    
+    return jsonResponse(
+        {"recieved":"true"},
+        200
+    )
     
     
+@csrf_exempt
+def sendContact(request):
+    payload = getJsonPayload(request)
     
+    try:
+        message = sendEmail(
+            recipient="cassadyeleanor@gmail.com",
+            subject=f"New Inquiry from {payload.get('name')}",
+            context=payload,
+            templatePrefix="contact-notification",
+            replyTo=payload.get("email"),
+        )
+    except:
+        logger.error(traceback.format_exc())
+        return jsonResponse(
+            {
+                "message":"error!"
+            },
+        
+            204
+        )
+    return jsonResponse(
+        {
+            "message":"hooray",
+        },
+        200
+    )    
     
 
 @csrf_exempt
 def viewed(request):
     
     payload = getJsonPayload(request)
-    print(dict(request.session))
     
     sourceId = payload.get("inquirer")
     details = None

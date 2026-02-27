@@ -1,0 +1,37 @@
+{% extends "shopify/base.html" %}
+{% block content %}
+
+<h1>Create Tagged Resume</h1>
+<form action="/shopify/resume/tag" method="post" class="jsform">
+    {% include "session_token.html" %}
+    <div class="formBody">
+        <div class="formrow">
+            <div class="formField">
+                <label>Employer Name</label>
+                <input type="text" name="name" placeholder="..." required>
+            </div>
+            <div class="formField">
+                <label>Resume Variant</label>
+                <select name="variant" required>
+                    <option value="">Select Variant</option>
+                    {% for variant in variants %}
+                        <option value="{{ variant.type }}">{{ variant.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="formrow">
+            <div class="formField">
+                <label>Details</label>
+                <textarea name="details" rows="10">
+                </textarea>
+            </div>
+        </div>
+    </div>
+    <div class="formfooter">
+        <div class="buttons">
+            <button type="submit">Submit</button>
+        </div>
+    </div>
+</form>
+{% endblock %}

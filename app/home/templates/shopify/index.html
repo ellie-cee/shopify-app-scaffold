@@ -1,4 +1,25 @@
 {% extends "shopify/base.html" %}
+<style>
+    .logo {
+        display: flex;
+        justify-content: center;
+        img {
+            max-width: 640px;
+            height: auto;
+        }
+    }
+</style>
 {% block content%}
-sup eqfewafewq
+<div class="logo">
+    <h1>EllieCee dot XYZ</h1>
+    <img src="/static/img/logo.png">
+</div>
+<script type="text/css">
+    setTimeout(
+        ()=>{
+            location.href="/shopify/resume";
+        },
+        1000
+    )
+</script>
 {% endblock %}

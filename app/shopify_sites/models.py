@@ -1,7 +1,10 @@
+from datetime import datetime,timedelta
 import os
 from django.db import models
 import hashlib, base64, hmac
-from .graphql import GraphQL
+
+import requests
+from .graphql import GraphQL, ShopifyTokenGrantException
 import shopify
 import sys
 import hmac,hashlib
@@ -16,6 +19,7 @@ class ShopifySite(models.Model):
     shopDomain = models.CharField(max_length=64,default="",db_index=True)
     shopHost = models.CharField(max_length=255,default="",db_index=True)
     accessToken = models.CharField(max_length=255,default="")
+    accessTokenExpires = models.DateTimeField(default=datetime.now)
     shopifyUrl = models.CharField(max_length=255,default="")
     contactName = models.CharField(max_length=255,default="")
     contactEmail = models.CharField(max_length=255,default="")
@@ -57,7 +61,7 @@ class ShopifySite(models.Model):
             shopify.Session(
                 f"{self.shopDomain}/admin",
                 os.environ.get("API_VERSION"),
-                self.accessToken
+                self.token()
             )
         )
     def shopDetails(self):
@@ -93,7 +97,29 @@ class ShopifySite(models.Model):
         self.shopUrl = shop.search("data.shop.url")
         self.save()
         return True
+    def token(self):
+        now = datetime.now()
+        if self.accessTokenExpires>now:
+            return self.accessToken
+        response = requests.post(
+            f"{self.adminUrl('oauth/access_token')}",
+            headers={
+                "Content-Type":"application/x-www-form-urlencoded"
+            },
+            data={
+                "grant_type":"client_credentials",
+                "client_id":self.shopifyClientId,
+                "client_secret":self.shopifyClientSecret
+            }
+        )
+        if response.status_code!=200:
+            raise ShopifyTokenGrantException
         
+        grant = response.json()
+        self.accessTokenExpires = datetime.now()+timedelta(minutes=86390)
+        self.accessToken = grant.get("access_token")
+        self.save()
+        return self.accessToken
     
     class Meta:
         db_table = "shopifySite"

@@ -10,7 +10,8 @@ import signal
 import http.client
 import sys
 logger = logging.getLogger(__name__)
-from home.lmno import SearchableDict
+from .data import Searchable
+
 
 class ShopifyTokenGrantException(Exception):
     shopName = "Shopify Site"
@@ -23,7 +24,7 @@ class ShopifyTokenException(Exception):
         self.shopUrl = shopify
 
 
-class GqlReturn(SearchableDict):
+class GqlReturn(Searchable):
     def errors(self,dump=False):
         if not hasattr(self,"errorDetails"):
             errorDetails = self.findErrors(self.data)
@@ -37,7 +38,7 @@ class GqlReturn(SearchableDict):
             if "userErrors" in object:
                 return object["userErrors"]
             elif "errors" in object:
-                return [{"message":x.get("message"),"code":"NA","field":SearchableDict(x).search("problems[0].path[-1]")} for x in object.get("errors")]
+                return [{"message":x.get("message"),"code":"NA","field":Searchable(x).search("problems[0].path[-1]")} for x in object.get("errors")]
             for key in object:
                 item = self.findErrors(object[key])
                 if item is not None:
@@ -86,7 +87,7 @@ class GqlReturn(SearchableDict):
                 break
         if actualData is not None:
             self.data = actualData
-        return SearchableDict(self.data)
+        return Searchable(self.data)
     def isUnauthorized(self):
         if "Unauthorized" in self.errorMessages():
             return True

@@ -19,6 +19,7 @@ from typing import Dict
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+WEB_DIR = BASE_DIR.parent
 
 
 
@@ -54,7 +55,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_redis',
     'home.apps.HomeConfig',
-    'site_auth.apps.AuthConfig',
     'shopify_sites.apps.ShopifySitesConfig',
     "shopify_proxy.apps.ShopifyProxyConfig",
     "django_q"

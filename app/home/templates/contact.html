@@ -1,0 +1,16 @@
+{% extends "headless.html" %}
+
+{% block content %}
+<style type="text/css">
+    #contactForm:has(input[name="email-sent"]) .for-unsent {
+        display: none;
+    }
+</style>
+<script src="//{{ env.APP_HOST}}/static/js/contact.js"></script>
+<div class="jsapp">
+    
+</div>
+<script>
+    window.contactForm = new ContactForm({appHost:"{{ env.APP_HOST }}"});
+</script>
+{% endblock %}

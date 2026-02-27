@@ -5,5 +5,7 @@ from . import views
 
 urlpatterns = [
     path('', views.homePage),
-    path("shopify",views.dashboard), 
+    path('install',views.install),
+    path("testemail",views.testEmail),
+    path("shopify",views.dashboard),
 ]

@@ -10,7 +10,7 @@ def shop_login_required(fn):
     def wrapper(request, *args, **kwargs):
         if request.GET.get("id_token") is not None: # add in authentication later
             return fn(request, *args, **kwargs)
-        if os.getenv("SHOPIFY_TOKEN") is not None:
+        if os.getenv("LOCALDEV") is not None:
             return fn(request, *args, **kwargs)
         elif not hasattr(request, 'session') or 'shopify' not in request.session:
             if "shop" in request.GET:
@@ -21,7 +21,6 @@ def shop_login_required(fn):
         elif "shop" in request.GET and request.GET["shop"]!=request.session["shopify"]["shop_url"]:
             request.session['return_to'] = request.get_full_path()
             return views.authenticate(request)
-        
         return fn(request, *args, **kwargs)
     wrapper.__name__ = fn.__name__
     return wrapper

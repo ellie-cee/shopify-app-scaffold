@@ -10,6 +10,9 @@ from slugify import slugify
 from shopify_sites.graphql import GraphQL
 from shopify_sites.models import ShopifySite
 import shopify
+from django.contrib.contenttypes.fields import GenericForeignKey,GenericRelation
+from django.contrib.contenttypes.models import ContentType
+from django.conf import settings
 
 logger = logging.Logger(__name__)
 
@@ -19,6 +22,11 @@ logger = logging.Logger(__name__)
 class IdAware:
     def getId(self):
         return str(self.id)
+
+class BaseModel(models.Model):
+    def getId(self):
+        return str(self.id)
+
 
 class SiteNav(models.Model,IdAware):
     id = models.BigAutoField(primary_key=True)
@@ -34,5 +42,6 @@ class SiteNav(models.Model,IdAware):
     
     class Meta:
         db_table="sitenav"
+
     
     

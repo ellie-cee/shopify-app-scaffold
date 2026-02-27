@@ -1,0 +1,21 @@
+<html>
+    <head>
+        <title>Eleanor Cassady </title>
+        <link rel="stylesheet" href="//{{ env.APP_HOST }}/static/css/site.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+        <script src="//{{ env.APP_HOST }}/static/js/site.js"></script>
+    </head>
+    <body>
+        {% include "csrf_token.html" %}
+        
+    <div class="body">
+        
+        <div class="main-content">
+            {% block content %}
+            content
+            {% endblock %}
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    </body>
+</html>
