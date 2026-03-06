@@ -47,9 +47,7 @@ def finalize(request):
     api_secret = os.environ.get("SHOPIFY_API_SECRET") #apps.get_app_config('shopify_sites').SHOPIFY_API_SECRET
     params = request.GET.dict()
     
-    logger.error(params)
-    logger.error(f"\n\n{api_secret}\n\n")
-        
+
     if request.session['shopify_oauth_state_param'] != params['state']:
         logger.error('Anti-forgery state token does not match the initial request.')
         return redirect(reverse(login))

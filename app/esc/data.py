@@ -1,6 +1,7 @@
 from decimal import Decimal
 import json
 from django.forms import model_to_dict
+from django.db import models
 from jmespath import search as jpath
 import datetime
 from dict_recursive_update import recursive_update
@@ -171,10 +172,15 @@ class Searchable(object):
     def __init__(self,data):
         self.data = None
         if data is None:
-            return None
-        if isinstance(data,dict):
+            data = {}
+        elif isinstance(data,dict):
             data = Data.jsonify(data)
+        elif isinstance(data,Searchable):
+            self.data = data.data
+        elif isinstance(data,models.Model):
+            data = Data.jsonify(model_to_dict(data))
         self.data = data
+
     def dict(self):
         return self.data
     def dumps(self):
@@ -287,6 +293,14 @@ class Searchable(object):
                 print(ret)
     def __str__(self):
         return json.dumps(self.data)
+    @staticmethod
+    def load(path:Path):
+        if path.exists():
+            return Searchable(json.load(path))
+        else:
+            with open(path,"w") as initfile:
+                json.dump({},initfile)
+            return Searchable
 
 class Vars:
     def __init__(self):

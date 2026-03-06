@@ -12,6 +12,9 @@ import logging
 # Create your models here.
 logger = logging.Logger(__name__)
 
+shopifyClientId = os.environ.get("SHOPIFY_API_KEY")
+shopifyClientSecret = os.environ.get("SHOPIFY_API_SECRET")
+
 class ShopifySite(models.Model):
     id = models.BigAutoField(primary_key=True)
     shopId = models.BigIntegerField(db_index=True,null=True,default=0)
@@ -23,6 +26,7 @@ class ShopifySite(models.Model):
     shopifyUrl = models.CharField(max_length=255,default="")
     contactName = models.CharField(max_length=255,default="")
     contactEmail = models.CharField(max_length=255,default="")
+    
     
     def __str__(self):
         return self.shopName
@@ -64,6 +68,8 @@ class ShopifySite(models.Model):
                 self.token()
             )
         )
+    def adminUrl(self,path=""):
+        return f"https://{self.shopDomain.split(".")[0]}.myshopify.com/admin/{path}"
     def shopDetails(self):
         self.startSession()
         shop = GraphQL().run(
@@ -108,8 +114,8 @@ class ShopifySite(models.Model):
             },
             data={
                 "grant_type":"client_credentials",
-                "client_id":self.shopifyClientId,
-                "client_secret":self.shopifyClientSecret
+                "client_id":shopifyClientId,
+                "client_secret":shopifyClientSecret
             }
         )
         if response.status_code!=200:

@@ -20,6 +20,7 @@ from typing import Dict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 WEB_DIR = BASE_DIR.parent
+LOG_DIR = os.path.join(BASE_DIR,"logs")
 
 
 
@@ -31,11 +32,11 @@ WEB_DIR = BASE_DIR.parent
 SECRET_KEY = 'django-insecure-re9#=br+((2(gi39y!c20odhoq4tnk-)ph58l(sdu0ep1qa@!7'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG_MODE")=="true"
+DEBUG = bool(os.environ.get("DEBUG_MODE"))
 ALLOWED_HOSTS = [os.getenv("APP_HOST"),"localhost","127.0.0.1"] 
 
 CORS_ALLOWED_ORIGINS = [
-    'https://abc.elliecee.xyz',
+    os.getenv("APP_HOST"),
     "http://127.0.0.1"
 ]
 CORS_ALLOW_HEADERS = [
@@ -54,11 +55,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'django_redis',
-    'home.apps.HomeConfig',
+    'site.apps.SiteConfig',
     'shopify_sites.apps.ShopifySitesConfig',
     "shopify_proxy.apps.ShopifyProxyConfig",
-    "django_q"
-]
+    "django_tasks",
+    "django_tasks.database"
+]+os.environ.get("APPS","").split(",")
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -71,8 +73,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'shopify_sites.middleware.LoginProtection',
     'shopify_sites.middleware.ShopifyEmbed',
-    'xyz.middleware.CorsHeaders'
-]
+    'xyz.middleware.CorsHeaders',
+]+os.environ.get("MIDDLEWARE","").split(",")
 
 CACHES = {
     "default": {
@@ -102,7 +104,7 @@ TEMPLATES = [
                 "home.context_procesors.sidebarNav",
                 "home.context_procesors.env",
                 "home.context_procesors.proxyDetails",
-            ],
+            ]+os.environ.get("CONTEXT_PROCESSORS","").split(","),
         },
     },
 ]
@@ -184,19 +186,9 @@ APPEND_SLASH = False
 
 EMAIL_BACKEND = os.environ.get("DJANGO_EMAIL_BACKEND","django.core.mail.backends.smtp.EmailBackend")
 
-EMAIL_USE_TLS = False
-EMAIL_PORT = 25
+EMAIL_USE_TLS = bool(os.environ.get("EMAIL_USE_TLS"))
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT"))
 EMAIL_HOST_USER = os.environ.get("DEFAULT_EMAIL")
-
-
-ANYMAIL = {
-    "BREVO_API_KEY": os.environ.get("DJANGO_EMAIL_API_KEY"),
-    "BREVO_API_URL":"https://api.brevo.com/v3/",
-    "SENDINBLUE_API_KEY":os.environ.get("DJANGO_EMAIL_API_KEY"),
-    "ANYMAIL_SENDINBLUE_API_KEY":os.environ.get("DJANGO_EMAIL_API_KEY"),
-    
-      # your Mailgun domain, if needed
-}
 
 LOGGING = {
     'version': 1,
@@ -253,7 +245,7 @@ LOGGING = {
     },
 }
 
-DEFAULT_FROM_EMAIL = "notifications@elliecee.xyz"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_EMAIL")
 USE_DJANGO_Q_FOR_EMAILS = False  # 🆕 Use Django Q for sending ALL emails.
 DJANGO_Q_AVAILABLE = False
 
@@ -264,5 +256,11 @@ Q_CLUSTER = {
     'retry':90,
     'django_redis': 'default',
     'catchup':True,
+}
+
+TASKS = {
+    "default": {
+        "BACKEND": "django_tasks.backends.immediate.ImmediateBackend"
+    }
 }
 #wat

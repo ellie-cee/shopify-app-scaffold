@@ -2,7 +2,6 @@ import os
 import traceback
 from django.shortcuts import render,redirect
 from django.template.loader import render_to_string
-from site_auth.decorators import requiresLogin
 from django.http import HttpResponse
 from shopify_sites.models import ShopifySite
 import json

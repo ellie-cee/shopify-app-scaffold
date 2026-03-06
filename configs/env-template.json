@@ -1,0 +1,65 @@
+{
+    "DEFAULT_EMAIL":{
+        "label":"Default Email Address",
+        "default":"mail@ecample.com"
+    },
+    "MAIL_DOMAIN":{
+        "label":"Mail Domain",
+        "default":"site.com"
+    },
+    "API_VERSION":{
+        "label":"Shopify API Version",
+        "default":"2026-01"
+    },
+    "DEBUG_MODE":{
+        "label":"Run in debug Mode",
+        "default":"false",
+        "choices":[
+            "True",
+            "False"
+        ]
+    },
+    "APP_DOMAIN":{
+        "label":"App Hostname",
+        "default":"https://apps.example.domain"
+    },
+    "SHOPIFY_DOMAIN":{
+        "label":"Shopify Domain",
+        "default":"https://store.shop.domain"
+    },
+    "DJANGO_SECRET":{
+        "autogenerate":true
+    },
+    "EMAIL_HOST":{
+        "label":"Email Host",
+        "default":"localhost"
+    },
+    "EMAIL_PORT":{
+        "label":"Email Port",
+        "default":"25"
+    },
+    "EMAIL_USE_TLS":{
+        "label":"Use TLS",
+        "choices":["True","False"]
+    },
+    "APPS":{
+        "label":"Installed Apps",
+        "default":"",
+        "blank":true
+    },
+    "MIDDLEWARE":{
+        "label":"Installed Middleware",
+        "default":"",
+        "blank":true
+    },
+    "CONTEXT_PROCESSORS":{
+        "label":"Context Processors",
+        "default":"",
+        "blank":true
+    },
+    "LOCALDEV_DOMAIN":{
+        "label":"Local Development Domain",
+        "default":"",
+        "blank":true
+    }
+}

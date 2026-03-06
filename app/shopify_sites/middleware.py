@@ -1,7 +1,12 @@
 import os
 from django.apps import apps
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import render
 from django.urls import reverse
 import shopify
+
+from app.esc.data import Data
+from app.esc.graphql import ShopifyTokenGrantException
 from .models import ShopifySite
 import logging
 logger = logging.Logger(__name__)
@@ -14,7 +19,7 @@ class ConfigurationError(BaseException):
     pass
 
 class LoginProtection(object):
-    def getSession(self,request):
+    def getSession(self,request:HttpRequest):
         sessionData = {}
 
         if request.headers.get("X-Shopify-Site") is not None:
@@ -36,7 +41,7 @@ class LoginProtection(object):
         sessionData["sessionKey"] = self.sessionKey
         return sessionData
 
-    def saveSession(self,request,sessionData={}):
+    def saveSession(self,request:HttpRequest,sessionData={}):
         if self.sessionType == "cacheSession":
             cache.set(self.sessionKey,json.dumps(sessionData))
         elif self.sessionType=="transient":
@@ -59,7 +64,7 @@ class LoginProtection(object):
             #raise ConfigurationError("SHOPIFY_API_KEY and SHOPIFY_API_SECRET must be set in ShopifyAppConfig")
         shopify.Session.setup(api_key=self.api_key, secret=self.api_secret)
 
-    def __call__(self, request):
+    def __call__(self, request:HttpRequest):
         session = self.getSession(request)
         api_version = apps.get_app_config('shopify_sites').SHOPIFY_API_VERSION
         if session.get("shopify") is None:
@@ -78,7 +83,7 @@ class LoginProtection(object):
                 session["shopify"] = {
                     "shop_url":f"{site.shopDomain}",
                     "shopId":site.id,
-                    "access_token":site.accessToken
+                    "access_token":site.token()
                 }
                 
             elif request.GET.get("shop") is not None and request.GET.get("embedded") is not None:
@@ -112,4 +117,31 @@ class ShopifyEmbed:
     def __call__(self, request):
         response = self.get_response(request)
         response['Content-Security-Policy'] = f"frame-ancestors https://{os.environ.get('SHOPIFY_DOMAIN')} https://admin.shopify.com;"
+        return response
+class ShopifyTokens:
+    def __init__(self, get_response):
+        self.get_response = get_response
+    def process_exception(self,request:HttpRequest,exception):
+        if isinstance(exception,ShopifyTokenGrantException) or isinstance(exception,ShopifyTokenException):
+            if "json" in request.content_type:
+                return HttpResponse(
+                    json.dumps(Data.jsonify({
+                        "message":f"Unable to retrieve session token for {exception.shopName}",
+                        "status":401
+                    })),
+                    content_type="application/json",
+                    status=401
+                )
+            else:
+                return render(
+                    request,
+                    "token_error.html",
+                    {
+                        "shopName":exception.shopName,
+                    }
+                )
+
+        return None
+    def __call__(self, request:HttpRequest):
+        response = self.get_response(request)
         return response
