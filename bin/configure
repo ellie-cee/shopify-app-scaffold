@@ -1,0 +1,317 @@
+#!/usr/bin/env python3
+
+import os
+import pathlib
+import sys
+import uuid
+BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
+sys.path.append(str(BASE_DIR))
+
+import datetime
+
+import string
+
+import json
+from urllib.parse import urlparse
+from password_generator import PasswordGenerator
+import subprocess
+import toml
+import json
+
+from slugify import slugify
+import argparse
+import secrets
+from passwordgenerator import pwgenerator
+from jinja2 import Environment, FileSystemLoader
+import pyinputplus as pyip
+from app.esc.data import Searchable
+
+
+parser = argparse.ArgumentParser()
+
+
+for path in ["tmp","files","shopify_app"]:
+    dir = pathlib.Path(os.path.join(BASE_DIR,path))
+    if not dir.exists():
+        dir.mkdir()
+
+
+DATABASES = pathlib.Path(os.path.join(BASE_DIR,".database_profiles.json"))
+ENV_FILE = pathlib.Path(os.path.join(BASE_DIR,".env"))
+TEMPLATES = pathlib.Path(os.path.join(BASE_DIR,"templates","configs"))
+TMPFILES = pathlib.Path(os.path.join(BASE_DIR,"tmp"))
+APP_DIR = os.path.join(BASE_DIR,"esc")
+CONFIG_DIR = os.path.join(BASE_DIR,"templates","configs")
+environmentLoader = Environment(loader=FileSystemLoader(CONFIG_DIR))
+
+API_VERSION = "2026-01"
+
+class Configurator(object):
+    def __init__(self,**kwargs):
+        self.args = kwargs
+        self.sysConfig = None
+        self.config = {}
+        self.env = self.loadEnv()
+        if DATABASES.exists():
+            try:
+                self.databases = json.load(open(DATABASES))
+            except:
+                self.databases = {}
+        else:
+            self.databases = {}
+    def run(self):
+        self.type = slugify(pyip.inputMenu(
+            prompt="Select Config Type: \n",
+            choices=[
+                "ETL",
+                "Custom App",
+                "Unlisted App",
+            ],
+            numbered=True,
+
+        ))
+        if self.type == "etl":
+            self.buildEtlApp()
+        else:
+            self.buildShopifyApp()
+    def readTemplate(self,name):
+        file = pathlib.Path(os.path.join(TEMPLATES,name))
+        if file.exists():
+            if file.name.lower().endswith("json"):
+                return json.load(file)
+            return open(file).read()
+        else:
+            return ""
+    def parseEnvFile(self,path:pathlib.Path,existing={}) -> dict:
+        env = {}
+        if path.exists():
+            with open(path) as file:
+                for line in file.readlines():
+                    key,value,*rest = line.split("=")
+                    if key in existing:
+                        env[key] = existing[key]
+                    else:
+                        env[key] = value
+        return env
+
+    def defaultEnv(self,existing={}):
+        return self.parseEnvFile(
+            pathlib.Path(os.path.join(TEMPLATES,"env-default")),
+            existing=existing
+        )
+    def buildEnv(self,values={}):
+        env = self.parseEnvFile(ENV_FILE)+values
+        template:dict = self.readTemplate("env-template.json")
+        if len(env)<1:
+            value:dict
+            for key,value in template.items():
+                if value.get("choices") is not None:
+                    env[key] = pyip.inputMenu(
+                        prompt=f'{value.get("label")}: ',
+                        choices=value.get("choices"),
+                        numbered=True
+                    )
+                elif value.get("autogenerate"):
+                    env[key] = str(uuid.uuid4())
+                else:
+                    env[key] = pyip.inputStr(
+                        prompt=f'{value.get("label")}: ',
+                        default=env.get(key) if key in env else value.get("default"),
+                        blank=value.get("blank")
+                    )
+        return env           
+
+                    
+
+
+
+    def loadEnv(self):
+        return self.parseEnvFile(pathlib.Path(os.path.join(BASE_DIR,".env")))
+    def get(self,key,default=None):
+        if self.args.get(key):
+            return self.args.get(key)
+        return default
+    def set(self,key,value):
+        self.args[key] = value    
+    def write(self,name,content):
+        path = pathlib.Path(os.path.join(BASE_DIR,name))
+        with open(path,"w") as file:
+            file.write(content)
+    def generatePassword(self,length):
+        characters = string.ascii_letters + string.digits + string.punctuation
+        secure_password = ''.join(secrets.choice(characters) for i in range(length))
+        return secure_password
+    def proceed(self,prompt):
+        return pyip.inputMenu(
+            prompt=f"{prompt}\n",
+            choices=["Yes","No"],
+            numbered=True
+        )=="Yes"
+    def buildShopifyProfile(self,profile:Searchable):
+        profile.set(
+            "clientId",
+            pyip.inputStr(
+                prompt="Client ID: ",
+                default=profile.get("clientId")
+            )
+        )
+        profile.set(
+            "clientSecret",
+            pyip.inputStr(
+                prompt="Client Secret: ",
+                default=profile.get("clientSecret")
+            )
+        )
+        profile.set(
+            "shopName",
+            pyip.inputStr(
+                prompt="Shop Host: ",
+                default=profile.get("shopName")
+            ).replace(".myshopify.com","")
+        )
+        profile.set(
+            "apiVersion",
+            pyip.inputStr(
+                prompt="API Version: ",
+                defualt=profile.get("apiVersion","2026-01")
+            )
+        )
+
+        profile.set("token","")
+        profile.set("expires",int(datetime.datetime.now().timestamp()))
+        
+    def buildDatabaseProfile(self,name):
+        if self.databases.get(name) is not None:
+            if not self.proceed(f"Database {name} exists. Rebuild?"):
+                return self.databases[name]
+            self.runSql(
+                f"delete-{name}.sql",
+                f"""
+                DROP DATABASE IF EXISTS `{self.databases[name].get("name")}`;
+                """
+            )
+        config = {
+            "host":pyip.inputStr("DB Host: ",default="localhost"),
+            "name":pyip.inputStr("DB Name: ",blank=False),
+            "password":str(uuid.uuid4()),
+        }
+        config["user"] = f"{config.get("name")}_user"
+        self.runSql(
+            "create-database.sql",
+            f""" 
+                DROP DATABASE IF EXISTS `{config.get('name')}`;
+                CREATE DATABASE `{config.get('name')}`  DEFAULT CHARSET = utf8mb4 DEFAULT COLLATE = utf8mb4_unicode_ci;
+                DROP USER IF EXISTS `{config.get('user')}`@`localhost`;
+                create user `{config.get('user')}`@`localhost` IDENTIFIED BY '{config.get('password')}';
+                GRANT ALL PRIVILEGES on {config.get('name')}.* to `{config.get('user')}`@`localhost`;
+                flush privileges;
+            """
+        )
+        self.databases[name] = config
+        return config
+    def populateDatabase(self,profile):
+        files = list(
+            map(
+                lambda x:str(x.resolve()),
+                pathlib.Path("./").glob("*.sql")
+            )
+        )
+        if len(files)<1:
+            return
+        popfile = pyip.inputMenu(
+            prompt="Populate Database? \n",
+            choices = files+["No"],
+            numbered=True
+
+        )
+        if popfile == "No":
+            return
+        print(f"Populating {profile.get('name')} from {popfile}. Please wait")
+        os.system(f"sudo mysql {profile.get("name")} < {popfile}")
+
+    def runSql(self,name,contents):
+        sqlPath = os.path.join(BASE_DIR,name)
+        with open(sqlPath,"w") as file:
+            file.write(contents)
+        
+        os.system(f"sudo mysql < {sqlPath}")
+        pathlib.Path(sqlPath).unlink()        
+
+    def writeEnv(self,items:dict):
+        self.write(
+            ".env",
+            "\n".join([f"{key}={value}" for key,value in items.items()])
+        )
+    def buildEtlApp(self):
+        apiConfig = Searchable
+        
+
+
+        env = {
+            "PROJECT_NAME":pyip.inputStr("Project Name: ",blank=False),
+            "DJANGO_SETTINGS_MODULE":"EscMTDjango.settings",
+            "PYTHONPATH":"./:./bin:./pbin",
+            "PATH":f"{os.environ.get("PATH")}:./bin:./pbin"
+        }
+        print("Building Default Shopify Profile")
+        self.buildShopifyProfile(apiConfig,"default")
+        while self.proceed("Create another profile?"):
+            self.buildShopifyProfile(
+                pyip.inputStr("Profile Name: ",blank=False)
+            )
+        print("Building default database")
+        defaultDB = self.buildDatabaseProfile("default")
+        env["DB_NAME"] = defaultDB.get("name")
+        env["DB_HOST"] = defaultDB.get("host")
+        env["DB_USER"] = defaultDB.get("user")
+        env["DB_PASSWORD"] = defaultDB.get("password")
+        while self.proceed("Create another database?"):
+            newDB = self.buildDatabaseProfile(
+                pyip.inputStr("Profile Name: ",blank=False)
+            )
+            self.populateDatabase(newDB)
+        with open(DATABASES,"w") as file:
+            json.dump(self.databases,file)
+        self.writeEnv(env)
+    def buildShopifyApp(self):
+        projectName = pyip.inputStr("Project Name: ")
+        hostname = pyip.inputStr("Shopify Hostname: ")
+
+
+        env = self.defaultEnv(self.loadEnv())
+        apiConfig = Searchable.load(DATABASES)
+        self.buildShopifyProfile(apiConfig,"default")
+
+        config = {
+            "project_root":APP_DIR,
+            "wsgi_port":pyip.inputStr("WSGI Port",default="9000"),
+            "project_domain": hostname,
+            "project_slug":  slugify(projectName),
+            "project_name": projectName,
+            "project_user":pyip.inputStr("Project User"),
+            "project_group":pyip.inputStr("Project Group"),
+            "project_base_class":pyip.inputStr("Base Class",default="esc")
+        }
+        config["APP_HOST"] = f"127.0.0.1:{config.get("wsgi_port")}"
+        print("Building default database")
+        defaultDB = self.buildDatabaseProfile("default")
+        env["DB_NAME"] = defaultDB.get("name")
+        env["DB_HOST"] = defaultDB.get("host")
+        env["DB_USER"] = defaultDB.get("user")
+        env["DB_PASSWORD"] = defaultDB.get("password")
+
+        self.write(
+            "tmp/nginx.conf",
+            environmentLoader.get_template('nginx.conf').render(config),    
+        )
+        self.write(
+            "tmp/uwsgi.ini",
+            environmentLoader.get_template('uwsgi.ini').render(config),
+        )
+        self.write(
+            "tmp/systemd.service",
+            environmentLoader.get_template('systemd.service').render(config),    
+        )
+    def buildCustomApp(self):
+        pass
+Configurator().run()
