@@ -21,7 +21,6 @@ import json
 from slugify import slugify
 import argparse
 import secrets
-from passwordgenerator import pwgenerator
 from jinja2 import Environment, FileSystemLoader
 import pyinputplus as pyip
 from app.esc.data import Searchable
@@ -40,8 +39,10 @@ DATABASES = pathlib.Path(os.path.join(BASE_DIR,".database_profiles.json"))
 ENV_FILE = pathlib.Path(os.path.join(BASE_DIR,".env"))
 TEMPLATES = pathlib.Path(os.path.join(BASE_DIR,"templates","configs"))
 TMPFILES = pathlib.Path(os.path.join(BASE_DIR,"tmp"))
+LOGDIR = pathlib.Path(os.path.join(BASE_DIR,"logs"))
 APP_DIR = os.path.join(BASE_DIR,"esc")
 CONFIG_DIR = os.path.join(BASE_DIR,"templates","configs")
+CONFIG_CACHE = pathlib.Path(os.path.join(BASE_DIR,".config-cache.json"))
 environmentLoader = Environment(loader=FileSystemLoader(CONFIG_DIR))
 
 API_VERSION = "2026-01"
@@ -59,6 +60,9 @@ class Configurator(object):
                 self.databases = {}
         else:
             self.databases = {}
+        for folder in [TMPFILES,LOGDIR]:
+            if not folder.exists():
+                folder.mkdir()
     def run(self):
         self.type = slugify(pyip.inputMenu(
             prompt="Select Config Type: \n",
@@ -78,7 +82,7 @@ class Configurator(object):
         file = pathlib.Path(os.path.join(TEMPLATES,name))
         if file.exists():
             if file.name.lower().endswith("json"):
-                return json.load(file)
+                return json.load(open(file))
             return open(file).read()
         else:
             return ""
@@ -100,25 +104,27 @@ class Configurator(object):
             existing=existing
         )
     def buildEnv(self,values={}):
-        env = self.parseEnvFile(ENV_FILE)+values
+        env = self.parseEnvFile(ENV_FILE)|values
         template:dict = self.readTemplate("env-template.json")
-        if len(env)<1:
-            value:dict
-            for key,value in template.items():
-                if value.get("choices") is not None:
-                    env[key] = pyip.inputMenu(
-                        prompt=f'{value.get("label")}: ',
-                        choices=value.get("choices"),
-                        numbered=True
-                    )
-                elif value.get("autogenerate"):
-                    env[key] = str(uuid.uuid4())
-                else:
-                    env[key] = pyip.inputStr(
-                        prompt=f'{value.get("label")}: ',
-                        default=env.get(key) if key in env else value.get("default"),
-                        blank=value.get("blank")
-                    )
+        
+        value:dict
+        for key,value in template.items():
+            if value.get("choices") is not None:
+                env[key] = pyip.inputMenu(
+                    prompt=f'{value.get("label")}: ',
+                    choices=value.get("choices"),
+                    numbered=True
+                )
+            elif value.get("autogenerate"):
+                env[key] = str(uuid.uuid4())
+            else:
+                env[key] = self.getText(
+                    value.get("label"),
+                    key,
+                    env,
+                    allowBlank=value.get("blank",False),
+                    defaultValue=env.get(key).strip() if key in env else value.get("default")
+                )
         return env           
 
                     
@@ -147,52 +153,55 @@ class Configurator(object):
             choices=["Yes","No"],
             numbered=True
         )=="Yes"
+    def getText(self,prompt,key,input,allowBlank=False,defaultValue=None):
+        showPrompt = f"{prompt}"
+        if input.get(key) is not None:
+            showPrompt = f"{showPrompt} ({input.get(key).strip()}): "
+        else:
+            showPrompt = f"{showPrompt}: "
+        if defaultValue is None:
+            defaultValue = input.get(key,"")
+
+        result =  pyip.inputStr(
+                prompt=showPrompt,
+                default=defaultValue,
+                blank=True if input.get(key) is not None or allowBlank else False
+            )
+        if not result:
+            result = defaultValue
+
+        return result
+        
+        
     def buildShopifyProfile(self,profile:Searchable):
         profile.set(
-            "clientId",
-            pyip.inputStr(
-                prompt="Client ID: ",
-                default=profile.get("clientId")
-            )
+            "SHOPIFY_CLIENT_ID",
+            self.getText("Client ID","SHOPIFY_CLIENT_ID",profile)
         )
         profile.set(
-            "clientSecret",
-            pyip.inputStr(
-                prompt="Client Secret: ",
-                default=profile.get("clientSecret")
-            )
+            "SHOPIFY_CLIENT_SECRET",
+            self.getText("Client Secret","SHOPIFY_CLIENT_SECRET",profile)
         )
         profile.set(
-            "shopName",
-            pyip.inputStr(
-                prompt="Shop Host: ",
-                default=profile.get("shopName")
-            ).replace(".myshopify.com","")
+            "SHOPIFY_API_VERSION",
+            self.getText("API Version","SHOPIFY_API_VERSION",profile)
         )
-        profile.set(
-            "apiVersion",
-            pyip.inputStr(
-                prompt="API Version: ",
-                defualt=profile.get("apiVersion","2026-01")
-            )
-        )
-
-        profile.set("token","")
-        profile.set("expires",int(datetime.datetime.now().timestamp()))
+        return profile
         
     def buildDatabaseProfile(self,name):
-        if self.databases.get(name) is not None:
+        database = self.databases.get(name)
+        if database is not None:
             if not self.proceed(f"Database {name} exists. Rebuild?"):
-                return self.databases[name]
+                return database
             self.runSql(
                 f"delete-{name}.sql",
                 f"""
-                DROP DATABASE IF EXISTS `{self.databases[name].get("name")}`;
+                DROP DATABASE IF EXISTS `{database.get("name")}`;
                 """
             )
         config = {
-            "host":pyip.inputStr("DB Host: ",default="localhost"),
-            "name":pyip.inputStr("DB Name: ",blank=False),
+            "host":self.getText("DB Host","DB_HOST",database),
+            "name":self.getText("DB Name","DB_NAME",database),
             "password":str(uuid.uuid4()),
         }
         config["user"] = f"{config.get("name")}_user"
@@ -208,6 +217,8 @@ class Configurator(object):
             """
         )
         self.databases[name] = config
+        with(open(DATABASES,"w")) as dbfile:
+            json.dump(self.databases,dbfile)
         return config
     def populateDatabase(self,profile):
         files = list(
@@ -238,6 +249,7 @@ class Configurator(object):
         pathlib.Path(sqlPath).unlink()        
 
     def writeEnv(self,items:dict):
+        Searchable(items).dump()
         self.write(
             ".env",
             "\n".join([f"{key}={value}" for key,value in items.items()])
@@ -274,24 +286,25 @@ class Configurator(object):
             json.dump(self.databases,file)
         self.writeEnv(env)
     def buildShopifyApp(self):
-        projectName = pyip.inputStr("Project Name: ")
-        hostname = pyip.inputStr("Shopify Hostname: ")
-
-
-        env = self.defaultEnv(self.loadEnv())
+        configCache = json.load(open(CONFIG_CACHE)) if CONFIG_CACHE.exists() else {}
+        projectName = self.getText("Project Name","APP_NAME",configCache)
+        hostname = self.getText("Project Domain","SHOPIFY_DOMAIN",configCache)
+        
+        env = self.buildEnv(values=configCache)
         apiConfig = Searchable.load(DATABASES)
-        self.buildShopifyProfile(apiConfig,"default")
+        shopifyProfile = self.buildShopifyProfile(Searchable(configCache))
 
         config = {
             "project_root":APP_DIR,
-            "wsgi_port":pyip.inputStr("WSGI Port",default="9000"),
+            "project_wsgi_port":self.getText("WSGI Port","project_wsgi_port",configCache),
             "project_domain": hostname,
             "project_slug":  slugify(projectName),
             "project_name": projectName,
-            "project_user":pyip.inputStr("Project User"),
-            "project_group":pyip.inputStr("Project Group"),
-            "project_base_class":pyip.inputStr("Base Class",default="esc")
+            "project_user":self.getText("Project User","project_user",configCache),
+            "project_group":self.getText("Project Group","project_group",configCache),
+            "project_base_class":self.getText("Base Class","project_base_class",configCache)
         }
+        
         config["APP_HOST"] = f"127.0.0.1:{config.get("wsgi_port")}"
         print("Building default database")
         defaultDB = self.buildDatabaseProfile("default")
@@ -299,6 +312,20 @@ class Configurator(object):
         env["DB_HOST"] = defaultDB.get("host")
         env["DB_USER"] = defaultDB.get("user")
         env["DB_PASSWORD"] = defaultDB.get("password")
+        env["SHOPIFY_CLIENT_ID"] = shopifyProfile.get("SHOPIFY_CLIENT_ID")
+        env["SHOPIFY_CLIENT_SECRET"] = shopifyProfile.get("SHOPIFY_CLIENT_SECRET")
+        env["SHOPIFY_API_VERSION"] = shopifyProfile.get("SHOPIFY_API_VERSION")
+        env["APP_DOMAIN"] = hostname
+        env["APP_NAME"] = projectName
+
+        for key,value in env.items():
+            config[key] = value
+        for key,value in shopifyProfile.dict().items():
+            config[key] = value
+
+        self.writeEnv(env)
+        with open(CONFIG_CACHE,"w") as cfile:
+            json.dump(config,cfile)
 
         self.write(
             "tmp/nginx.conf",
@@ -310,7 +337,7 @@ class Configurator(object):
         )
         self.write(
             "tmp/systemd.service",
-            environmentLoader.get_template('systemd.service').render(config),    
+            environmentLoader.get_template('systemd-app.service').render(config),    
         )
     def buildCustomApp(self):
         pass

@@ -20,7 +20,7 @@ from typing import Dict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 WEB_DIR = BASE_DIR.parent
-LOG_DIR = os.path.join(BASE_DIR,"logs")
+LOG_DIR = os.path.join(WEB_DIR,"logs")
 
 
 
@@ -36,13 +36,17 @@ DEBUG = bool(os.environ.get("DEBUG_MODE"))
 ALLOWED_HOSTS = [os.getenv("APP_HOST"),"localhost","127.0.0.1"] 
 
 CORS_ALLOWED_ORIGINS = [
-    os.getenv("APP_HOST"),
+    os.getenv("APP_DOMAIN"),
+    f"https://{os.environ.get('SHOPIFY_DOMAIN')}",
     "http://127.0.0.1"
 ]
 CORS_ALLOW_HEADERS = [
     "X-Shopify-Site",
     "Content-Type"
 ]
+
+def filtered_additions(key):
+    return [x for x in filter(lambda x:x is not None and len(x)>0,os.environ.get(key,"").split(','))]
 
 # Application definition
 
@@ -55,12 +59,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'django_redis',
-    'site.apps.SiteConfig',
+    'root.apps.RootConfig',
     'shopify_sites.apps.ShopifySitesConfig',
     "shopify_proxy.apps.ShopifyProxyConfig",
     "django_tasks",
-    "django_tasks.database"
-]+os.environ.get("APPS","").split(",")
+]+filtered_additions("APPS")
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -74,7 +78,7 @@ MIDDLEWARE = [
     'shopify_sites.middleware.LoginProtection',
     'shopify_sites.middleware.ShopifyEmbed',
     'xyz.middleware.CorsHeaders',
-]+os.environ.get("MIDDLEWARE","").split(",")
+]+filtered_additions("MIDDLEWARE")
 
 CACHES = {
     "default": {
@@ -104,7 +108,7 @@ TEMPLATES = [
                 "home.context_procesors.sidebarNav",
                 "home.context_procesors.env",
                 "home.context_procesors.proxyDetails",
-            ]+os.environ.get("CONTEXT_PROCESSORS","").split(","),
+            ]+filtered_additions("CONTEXT_PROCESSORS")
         },
     },
 ]
@@ -207,7 +211,7 @@ LOGGING = {
         'file': {
             'level': 'ERROR',  # Or 'DEBUG', 'WARNING', 'ERROR', 'CRITICAL'
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs/django.log'), # Path to your log file
+            'filename': os.path.join(WEB_DIR, 'logs','django.log'), # Path to your log file
             'formatter': 'verbose',
         },
         'console': {
@@ -258,9 +262,4 @@ Q_CLUSTER = {
     'catchup':True,
 }
 
-TASKS = {
-    "default": {
-        "BACKEND": "django_tasks.backends.immediate.ImmediateBackend"
-    }
-}
 #wat

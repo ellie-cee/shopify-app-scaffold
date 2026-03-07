@@ -6,5 +6,5 @@ Pipfile.lock
 *.log
 app/staticfiles/*
 tmp
-**/migrations/*
+#**/migrations/*
 app/html

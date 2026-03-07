@@ -169,7 +169,7 @@ class Html(object):
         
 
 class Searchable(object):
-    def __init__(self,data):
+    def __init__(self,data=None):
         self.data = None
         if data is None:
             data = {}
@@ -296,7 +296,7 @@ class Searchable(object):
     @staticmethod
     def load(path:Path):
         if path.exists():
-            return Searchable(json.load(path))
+            return Searchable(json.load(open(path)))
         else:
             with open(path,"w") as initfile:
                 json.dump({},initfile)

@@ -10,7 +10,7 @@ import signal
 import http.client
 import sys
 logger = logging.getLogger(__name__)
-from site.lmno import Searchable
+from root.lmno import Searchable
 
 class ShopifyTokenGrantException(Exception):
     shopName = "Shopify Site"

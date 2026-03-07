@@ -10,11 +10,9 @@ from django.conf import settings
 from django.template import RequestContext
 from django.core.mail import EmailMultiAlternatives
 from .lmno import EmailStatus, jsonify,sendEmail
-from appointment.models import Appointment,StaffMember,AppointmentRequest
 from django.views.decorators.csrf import csrf_exempt
 from xyz import settings
 from shopify_sites.decorators import shop_login_required
-from .models import ApplicationVariant,ResumeVariant
 import docx
 from docx.text.hyperlink import Hyperlink
 from django.http import FileResponse
