@@ -45,6 +45,8 @@ class ShopifyNav(models.Model):
     path = models.CharField(max_length=255,default="")
     label = models.CharField(max_length=255)
 
+    
+
     class Meta:
         db_table="shopify_nav"
 

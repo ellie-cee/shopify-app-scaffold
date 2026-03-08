@@ -1,3 +1,5 @@
+{% load cache %}
+
 <html>
     <head>
     <title>Eleanor Cassady </title>
@@ -11,6 +13,15 @@
             <div class="header-img"><img src="/static/img/logo.svg"></div>
         </div>
     <div class="body">
+        {% cache 5000 shopifyNavigation %}
+         <s-app-nav>
+            <s-link href="/shopify/" rel="home">Home</s-link>
+            {% for nav in shopifyNav %}
+                <s-link href="{{ nav.path }}">{{ nav.label }}</s-link>
+            {% endfor %}
+        </s-app-nav>
+            
+        {% endcache %}
 
         
         

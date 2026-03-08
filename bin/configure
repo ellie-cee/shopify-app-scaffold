@@ -288,7 +288,7 @@ class Configurator(object):
     def buildShopifyApp(self):
         configCache = json.load(open(CONFIG_CACHE)) if CONFIG_CACHE.exists() else {}
         projectName = self.getText("Project Name","APP_NAME",configCache)
-        hostname = self.getText("Project Domain","SHOPIFY_DOMAIN",configCache)
+        hostname = self.getText("Project Domain","APP_DOMAIN",configCache)
         
         env = self.buildEnv(values=configCache)
         apiConfig = Searchable.load(DATABASES)
@@ -312,6 +312,7 @@ class Configurator(object):
         env["DB_HOST"] = defaultDB.get("host")
         env["DB_USER"] = defaultDB.get("user")
         env["DB_PASSWORD"] = defaultDB.get("password")
+
         env["SHOPIFY_CLIENT_ID"] = shopifyProfile.get("SHOPIFY_CLIENT_ID")
         env["SHOPIFY_CLIENT_SECRET"] = shopifyProfile.get("SHOPIFY_CLIENT_SECRET")
         env["SHOPIFY_API_VERSION"] = shopifyProfile.get("SHOPIFY_API_VERSION")

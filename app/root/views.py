@@ -24,14 +24,13 @@ import pymupdf
 
 
 def dashboard(request):    
-    print(request.session.get("dewqdewq"))
     return render(
         request,
         "shopify/index.html",
         {}
     )
 def homePage(request):
-    print(request.headers)
+
     if request.GET.get("embedded") is not None and request.GET.get("id_token") is not None:
         return render(
             request,

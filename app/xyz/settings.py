@@ -66,6 +66,7 @@ INSTALLED_APPS = [
 ]+filtered_additions("APPS")
 
 
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -105,9 +106,10 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.request',
-                "home.context_procesors.sidebarNav",
-                "home.context_procesors.env",
-                "home.context_procesors.proxyDetails",
+                "root.context_procesors.sidebarNav",
+                "root.context_procesors.env",
+                "root.context_procesors.proxyDetails",
+                "root.context_procesors.shopifyNav"
             ]+filtered_additions("CONTEXT_PROCESSORS")
         },
     },
@@ -167,7 +169,7 @@ TIME_ZONE = 'America/Los_Angeles'  # Example: Eastern Time
 
 USE_I18N = False
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)

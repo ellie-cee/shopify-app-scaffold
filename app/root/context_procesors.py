@@ -1,6 +1,6 @@
 
 import logging
-from .models import SiteNav
+from .models import SiteNav,ShopifyNav
 import os
 
 
@@ -22,4 +22,10 @@ def proxyDetails(request):
     return {
         "shopName":request.GET.get("shop"),
         "customerId":request.GET.get("logged_in_customer_id")
+    }
+
+def shopifyNav(request):
+    print("loading")
+    return {
+        "shopifyNav":ShopifyNav.objects.all()
     }

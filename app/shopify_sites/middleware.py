@@ -5,8 +5,8 @@ from django.shortcuts import render
 from django.urls import reverse
 import shopify
 
-from app.esc.data import Data
-from app.esc.graphql import ShopifyTokenGrantException
+from esc.data import Data
+from esc.graphql import ShopifyTokenGrantException
 from .models import ShopifySite
 import logging
 logger = logging.Logger(__name__)
