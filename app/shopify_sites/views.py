@@ -9,7 +9,7 @@ from django.apps import apps
 import hmac, base64, hashlib, binascii, os
 import logging
 import shopify
-from .models import ShopifySite
+from .models import ShopifySite,OAuthState
 
 
 
@@ -39,21 +39,21 @@ def authenticate(request):
     scope = apps.get_app_config('shopify_sites').SHOPIFY_API_SCOPE
     redirect_uri = request.build_absolute_uri(reverse(finalize))
     state = binascii.b2a_hex(os.urandom(15)).decode("utf-8")
+    authState,created = OAuthState.objects.get_or_create(shop=shop_url,state=state)
     request.session['shopify_oauth_state_param'] = state
     permission_url = _new_session(shop_url).create_permission_url(redirect_uri,scope,state)
     return redirect(permission_url)
 
 def finalize(request):
-    api_secret = os.environ.get("SHOPIFY_API_SECRET") #apps.get_app_config('shopify_sites').SHOPIFY_API_SECRET
+    api_secret = apps.get_app_config('shopify_sites').SHOPIFY_API_SECRET
     params = request.GET.dict()
     
-
-    if request.session['shopify_oauth_state_param'] != params['state']:
+    authState = OAuthState.objects.filter(shop=params.get("shop")).first()
+    if authState is None or authState.state != params['state']:
         logger.error('Anti-forgery state token does not match the initial request.')
         return redirect(reverse(login))
     else:
-        request.session.pop('shopify_oauth_state_param', None)
-
+        authState.delete()
     myhmac = params.pop('hmac')
     line = '&'.join([
         '%s=%s' % (key, value)
@@ -71,7 +71,6 @@ def finalize(request):
         request.session['shopify'] = {
             "shop_url": shop_url,
             "access_token": session.request_token(request.GET),
-            "authenticated":True
         }
         shopifySite,created = ShopifySite.objects.get_or_create(shopHost=shop_url)
         if created:
@@ -79,8 +78,6 @@ def finalize(request):
             shopifySite.accessToken = session.request_token(request.GET)
             shopifySite.accessTokenExpires = datetime.now()+timedelta(minutes=86390)
             shopifySite.shopDetails()
-
-        
             
     except Exception as e:
         traceback.print_exc()

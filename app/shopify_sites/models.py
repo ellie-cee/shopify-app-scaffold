@@ -144,3 +144,11 @@ class ShopifySite(models.Model):
         db_table = "shopifySite"
     def tld(self):
         return f"{self.shopDomain}.myshopify.com"
+
+class OAuthState(models.Model):
+    shop = models.CharField(max_length=255,default="test-site",db_index=True)
+    state = models.CharField(max_length=255,default="")
+
+    class Meta:
+        db_table = "oauth_flow"
+

@@ -32,7 +32,7 @@ LOG_DIR = os.path.join(WEB_DIR,"logs")
 SECRET_KEY = 'django-insecure-re9#=br+((2(gi39y!c20odhoq4tnk-)ph58l(sdu0ep1qa@!7'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = bool(os.environ.get("DEBUG_MODE"))
+DEBUG = os.environ.get("DEBUG_MODE")=="True"
 
 ALLOWED_HOSTS = [os.getenv("APP_DOMAIN"),"localhost","127.0.0.1"] 
 
