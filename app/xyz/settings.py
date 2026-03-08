@@ -34,11 +34,11 @@ SECRET_KEY = 'django-insecure-re9#=br+((2(gi39y!c20odhoq4tnk-)ph58l(sdu0ep1qa@!7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(os.environ.get("DEBUG_MODE"))
 
-ALLOWED_HOSTS = [os.getenv("APP_HOST"),"localhost","127.0.0.1"] 
+ALLOWED_HOSTS = [os.getenv("APP_DOMAIN"),"localhost","127.0.0.1"] 
 print(ALLOWED_HOSTS)
 
 CORS_ALLOWED_ORIGINS = [
-    os.getenv("APP_DOMAIN"),
+    f"https://{os.getenv("APP_DOMAIN")}",
     f"https://{os.environ.get('SHOPIFY_DOMAIN')}",
     "http://127.0.0.1"
 ]
