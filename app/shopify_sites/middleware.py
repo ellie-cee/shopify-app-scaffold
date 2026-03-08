@@ -66,6 +66,7 @@ class LoginProtection(object):
         shopify.Session.setup(api_key=self.api_key, secret=self.api_secret)
 
     def __call__(self, request:HttpRequest):
+        print(request.path)
         session = self.getSession(request)
         api_version = apps.get_app_config('shopify_sites').SHOPIFY_API_VERSION
         print(session.get("shopify"))
