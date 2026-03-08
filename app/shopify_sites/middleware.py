@@ -2,7 +2,7 @@ import os
 import traceback
 from django.apps import apps
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.urls import reverse
 import shopify
 
@@ -97,14 +97,14 @@ class LoginProtection(object):
                     pass
                 
             elif request.GET.get("shop") is not None and request.GET.get("embedded") is not None:
-                site,created = ShopifySite.objects.get_or_create(shopDomain=request.GET.get("shop"))
-                if created:
-                    site.shopDetails()
+                site = ShopifySite.objects.filter(shopDomain=request.GET.get("shop")).first()
+                if site is None:
+                    return redirect("/shopify/login")
+
                 session["shopify"] = {
                     "shop_url":f"{site.shopDomain}",
                     "shopId":site.id,
                     "access_token":site.token(),
-                    "uninstalled":created
                 }
                 
                 
