@@ -99,6 +99,7 @@ class LoginProtection(object):
                 
             elif request.GET.get("shop") is not None and request.GET.get("embedded") is not None:
                 site = ShopifySite.objects.filter(shopDomain=request.GET.get("shop")).first()
+                print("SHITE IS",site)
                 if site is None:
                     return redirect("/shopify/login")
 
