@@ -70,7 +70,8 @@ def finalize(request):
         logger.error(f"\n\n{session.secret}\n\n")
         request.session['shopify'] = {
             "shop_url": shop_url,
-            "access_token": session.request_token(request.GET)
+            "access_token": session.request_token(request.GET),
+            "authenticated":True
         }
         shopifySite,created = ShopifySite.objects.get_or_create(shopHost=shop_url)
         if created:

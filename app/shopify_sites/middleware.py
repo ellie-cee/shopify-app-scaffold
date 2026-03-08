@@ -94,7 +94,8 @@ class LoginProtection(object):
                     session["shopify"] = {
                         "shop_url":f"{site.shopDomain}",
                         "shopId":site.id,
-                        "access_token":site.token()
+                        "access_token":site.token(),
+                         "authenticated":True
                     }
                 except:
                     pass
