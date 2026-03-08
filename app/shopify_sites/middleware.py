@@ -98,6 +98,7 @@ class LoginProtection(object):
                     pass
                 
             elif request.GET.get("shop") is not None and request.GET.get("embedded") is not None:
+                print("embedded")
                 site = ShopifySite.objects.filter(shopDomain=request.GET.get("shop")).first()
                 print("SHITE IS",site)
                 if site is None:
