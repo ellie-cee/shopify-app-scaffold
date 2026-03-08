@@ -70,7 +70,7 @@ class LoginProtection(object):
         session = self.getSession(request)
         api_version = apps.get_app_config('shopify_sites').SHOPIFY_API_VERSION
         print(session.get("shopify"))
-        if os.getenv("LOCALDEV_DOMAIN") or session.get("shopify") is None:
+        if session.get("shopify") is None or session.get("shopify").get("authenticated") is None:
             if os.getenv("LOCALDEV_DOMAIN"):
                 try:
                     shopifySite = ShopifySite.objects.filter(shopDomain=os.getenv("LOCALDEV_DOMAIN")).first()
@@ -78,7 +78,9 @@ class LoginProtection(object):
                     session["shopify"] = {
                         "shop_url":shopifySite.shopDomain,
                         "shopId":shopifySite.id,
-                        "access_token":shopifySite.token()
+                        "access_token":shopifySite.token(),
+                        "authenticated":True
+
                     }
                 
                 except:
@@ -103,7 +105,7 @@ class LoginProtection(object):
                 print("SHITE IS",site)
                 if site is None:
                     print("SITE IS NONE")
-                    return redirect("/shopify/login")
+                    return redirect("/shopify")
                 
                 session["shopify"] = {
                     "shop_url":f"{site.shopDomain}",
@@ -114,6 +116,7 @@ class LoginProtection(object):
                 
         
         if session.get("shopify") is not None:
+            
             session["shopify"]["shop_url"] = session["shopify"]["shop_url"].split("/")[0]
             shop_url = f"{session['shopify']['shop_url']}/admin"
             shopify_session = shopify.Session(shop_url, api_version)

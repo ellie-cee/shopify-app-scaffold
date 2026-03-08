@@ -22,7 +22,7 @@ logger = logging.Logger(__name__)
 import pathlib
 import pymupdf
 
-
+@shop_login_required
 def dashboard(request):    
     return render(
         request,
