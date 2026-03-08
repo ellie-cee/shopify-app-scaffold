@@ -1,13 +1,5 @@
 {% extends "shopify/base.html" %}
-{% load cache %}
-{% cache 5000 shopifyNavigation %}
-         <s-app-nav>
-            <s-link href="/shopify/" rel="home">Home</s-link>
-            {% for nav in shopifyNav %}
-                <s-link href="{{ nav.path }}">{{ nav.label }}</s-link>
-            {% endfor %}
-        </s-app-nav>
-        {% endcache %}
+
 <style>
     .logo {
         display: flex;
