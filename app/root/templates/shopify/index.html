@@ -1,4 +1,13 @@
 {% extends "shopify/base.html" %}
+{% load cache %}
+{% cache 5000 shopifyNavigation %}
+         <s-app-nav>
+            <s-link href="/shopify/" rel="home">Home</s-link>
+            {% for nav in shopifyNav %}
+                <s-link href="{{ nav.path }}">{{ nav.label }}</s-link>
+            {% endfor %}
+        </s-app-nav>
+        {% endcache %}
 <style>
     .logo {
         display: flex;
@@ -11,15 +20,7 @@
 </style>
 {% block content%}
 <div class="logo">
-    <h1>EllieCee dot XYZ</h1>
+    <h1>{{env.APP_NAME}}</h1>
     <img src="/static/img/logo.png">
 </div>
-<script type="text/css">
-    setTimeout(
-        ()=>{
-            location.href="/shopify/resume";
-        },
-        1000
-    )
-</script>
 {% endblock %}

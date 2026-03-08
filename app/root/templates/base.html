@@ -4,24 +4,17 @@
     <head>
     <title>Eleanor Cassady </title>
         <link rel="stylesheet" href="//abc.apps.elliecee.xyz/static/css/site.css">
+        <link rel="stylesheet" href="//abc.apps.elliecee.xyz/static/css/layout.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
         <script src="https://abc.apps.ellecee.xyz/static/js/site.js"></script>
     </head>
     <body>
         {% include "csrf_token.html" %}
         <div class="xyz-header">
-            <div class="header-img"><img src="/static/img/logo.svg"></div>
+            <div class="header-img"><img src="/static/img/logo.png"></div>
         </div>
     <div class="body">
-        {% cache 5000 shopifyNavigation %}
-         <s-app-nav>
-            <s-link href="/shopify/" rel="home">Home</s-link>
-            {% for nav in shopifyNav %}
-                <s-link href="{{ nav.path }}">{{ nav.label }}</s-link>
-            {% endfor %}
-        </s-app-nav>
-            
-        {% endcache %}
+        
 
         
         

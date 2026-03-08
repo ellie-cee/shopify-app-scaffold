@@ -1,17 +1,25 @@
-i<html>
+{% load cache %}
+<html>
     <head>
     <title>Eleanor Cassady </title>
-        <link rel="stylesheet" href="//abc.apps.elliecee.xyz/static/css/site.css">
+        <link rel="stylesheet" href="/static/css/site.css">
+        <link rel="stylesheet" href="/static/css/layout.css">
+
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
         <script src="https://abc.apps.ellecee.xyz/static/js/site.js"></script>
         <meta name="shopify-api-key" content="{{ env.SHOPIFY_API_KEY }}" />
         <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
     </head>
     <body>
-    <s-app-nav>
-        <s-link href="/shopify/" rel="home">Home</s-link>
-        <s-link href="/shopify/resume">Create tagged resume</s-link>
-    </s-app-nav>
+   
+{% cache 5000 shopifyNavigation %}
+         <s-app-nav>
+            <s-link href="/shopify/" rel="home">Home</s-link>
+            {% for nav in shopifyNav %}
+                <s-link href="{{ nav.path }}">{{ nav.label }}</s-link>
+            {% endfor %}
+        </s-app-nav>
+        {% endcache %}
     <div class="body">
         <div class="main-content">
             {% block content %}

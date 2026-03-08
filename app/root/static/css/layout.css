@@ -1,0 +1,11 @@
+div.logo {
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content:center;
+    align-items: center;
+    width: 320px;
+}
+s-app-nav {
+    display: none;
+}
