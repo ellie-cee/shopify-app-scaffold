@@ -15,6 +15,7 @@ import shopify
 import json
 from django.core.cache import cache
 import uuid
+from .views import authenticate
 
 class ConfigurationError(BaseException):
     pass
@@ -104,9 +105,9 @@ class LoginProtection(object):
                 print("embedded")
                 site = ShopifySite.objects.filter(shopDomain=request.GET.get("shop")).first()
                 print("SHITE IS",site)
-                if site is None:
+                if site is not None:
                     print("SITE IS NONE")
-                    return redirect("/shopify")
+                    return authenticate(request)
                 
                 session["shopify"] = {
                     "shop_url":f"{site.shopDomain}",
