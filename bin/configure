@@ -199,6 +199,8 @@ class Configurator(object):
                 DROP DATABASE IF EXISTS `{database.get("name")}`;
                 """
             )
+        else:
+            database = {}
         config = {
             "host":self.getText("DB Host","DB_HOST",database),
             "name":self.getText("DB Name","DB_NAME",database),
