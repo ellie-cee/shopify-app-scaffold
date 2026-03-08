@@ -101,12 +101,12 @@ class LoginProtection(object):
                 site = ShopifySite.objects.filter(shopDomain=request.GET.get("shop")).first()
                 print("SHITE IS",site)
                 if site is None:
+                    print("SITE IS NONE")
                     return redirect("/shopify/login")
 
                 session["shopify"] = {
                     "shop_url":f"{site.shopDomain}",
                     "shopId":site.id,
-                    "access_token":site.token(),
                 }
                 
                 
