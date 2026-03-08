@@ -73,7 +73,7 @@ class LoginProtection(object):
             if os.getenv("LOCALDEV_DOMAIN"):
                 try:
                     shopifySite = ShopifySite.objects.filter(shopDomain=os.getenv("LOCALDEV_DOMAIN")).first()
-                    
+
                     session["shopify"] = {
                         "shop_url":shopifySite.shopDomain,
                         "shopId":shopifySite.id,
@@ -97,15 +97,16 @@ class LoginProtection(object):
                     pass
                 
             elif request.GET.get("shop") is not None and request.GET.get("embedded") is not None:
-                try:
-                    site = ShopifySite.objects.get(shopDomain=request.GET.get("shop"))
-                    session["shopify"] = {
-                        "shop_url":f"{site.shopDomain}",
-                        "shopId":site.id,
-                        "access_token":site.token()
-                    }
-                except:
-                    pass
+                site,created = ShopifySite.objects.get_or_create(shopDomain=request.GET.get("shop"))
+                if created:
+                    site.shopDetails()
+                session["shopify"] = {
+                    "shop_url":f"{site.shopDomain}",
+                    "shopId":site.id,
+                    "access_token":site.token(),
+                    "uninstalled":created
+                }
+                
                 
         
         if session.get("shopify") is not None:

@@ -28,6 +28,7 @@ urlpatterns = [
     path('shopify/', include('shopify_sites.urls')),
     path("shopify-proxy/",include('shopify_proxy.urls')),
     path('',include('root.urls')),
+    path('webhooks/',include('webhooks.urls')),
  ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 

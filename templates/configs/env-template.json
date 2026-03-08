@@ -23,10 +23,6 @@
         "label":"App Hostname",
         "default":"https://apps.example.domain"
     },
-    "SHOPIFY_DOMAIN":{
-        "label":"Shopify Domain",
-        "default":"https://store.shop.domain"
-    },
     "DJANGO_SECRET":{
         "autogenerate":true
     },

@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'root.apps.RootConfig',
     'shopify_sites.apps.ShopifySitesConfig',
     "shopify_proxy.apps.ShopifyProxyConfig",
+    'webhooks.apps.WebhooksConfig',
     "django_tasks",
 ]+filtered_additions("APPS")
 
