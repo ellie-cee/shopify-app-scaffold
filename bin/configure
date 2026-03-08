@@ -29,7 +29,7 @@ from app.esc.data import Searchable
 parser = argparse.ArgumentParser()
 
 
-for path in ["tmp","files","shopify_app"]:
+for path in ["tmp","files","shopify_app","staticfiles"]:
     dir = pathlib.Path(os.path.join(BASE_DIR,path))
     if not dir.exists():
         dir.mkdir()
@@ -304,7 +304,8 @@ class Configurator(object):
             "project_name": projectName,
             "project_user":self.getText("Project User","project_user",configCache),
             "project_group":self.getText("Project Group","project_group",configCache),
-            "project_base_class":self.getText("Base Class","project_base_class",configCache)
+            "project_base_class":self.getText("Base Class","project_base_class",configCache),
+            "project_dir":str(BASE_DIR)
         }
         
         config["APP_HOST"] = f"127.0.0.1:{config.get("wsgi_port")}"
