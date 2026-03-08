@@ -4,6 +4,8 @@ from django.db import models
 import hashlib, base64, hmac
 
 import requests
+
+from esc.data import Searchable
 from .graphql import GraphQL, ShopifyTokenGrantException
 import shopify
 import sys
@@ -12,8 +14,8 @@ import logging
 # Create your models here.
 logger = logging.Logger(__name__)
 
-shopifyClientId = os.environ.get("SHOPIFY_API_KEY")
-shopifyClientSecret = os.environ.get("SHOPIFY_API_SECRET")
+shopifyClientId = os.environ.get("SHOPIFY_CLIENT_ID")
+shopifyClientSecret = os.environ.get("SHOPIFY_CLIENT_SECRET")
 
 class ShopifySite(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -21,7 +23,7 @@ class ShopifySite(models.Model):
     shopName = models.CharField(max_length=128,default="")
     shopDomain = models.CharField(max_length=64,default="",db_index=True)
     shopHost = models.CharField(max_length=255,default="",db_index=True)
-    accessToken = models.CharField(max_length=255,default="")
+    accessToken = models.CharField(max_length=255,default="",null=True)
     accessTokenExpires = models.DateTimeField(default=datetime.now)
     shopifyUrl = models.CharField(max_length=255,default="")
     contactName = models.CharField(max_length=255,default="")
@@ -119,7 +121,18 @@ class ShopifySite(models.Model):
             }
         )
         if response.status_code!=200:
-            raise ShopifyTokenGrantException
+            Searchable(
+                {
+                    "clientId":shopifyClientId,
+                    "secret":shopifyClientSecret,
+                    "code":response.status_code,
+                    "url":self.adminUrl('oauth/access_token')
+                }
+            ).dump()
+            print()
+            print(response.status_code)
+            print(response.content)
+            raise ShopifyTokenGrantException(self.shopName)
         
         grant = response.json()
         self.accessTokenExpires = datetime.now()+timedelta(minutes=86390)

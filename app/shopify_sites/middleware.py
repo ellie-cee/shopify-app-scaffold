@@ -1,4 +1,5 @@
 import os
+import traceback
 from django.apps import apps
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
@@ -67,17 +68,22 @@ class LoginProtection(object):
     def __call__(self, request:HttpRequest):
         session = self.getSession(request)
         api_version = apps.get_app_config('shopify_sites').SHOPIFY_API_VERSION
-        if session.get("shopify") is None:
-            if os.getenv("LOCALDEV"):
+        print(session.get("shopify"))
+        if os.getenv("LOCALDEV_DOMAIN") or session.get("shopify") is None:
+            if os.getenv("LOCALDEV_DOMAIN"):
                 try:
-                    shopifySite = ShopifySite.objects.filter(shopDomain=os.getenv("LOCALDEV")).first()
+                    shopifySite = ShopifySite.objects.filter(shopDomain=os.getenv("LOCALDEV_DOMAIN")).first()
                     session["shopify"] = {
                         "shop_url":shopifySite.shopDomain,
                         "shopId":shopifySite.id,
                         "access_token":shopifySite.token()
                     }
+                
                 except:
+                    traceback.print_exc()
+                    print("Dewqdewqd")
                     pass
+                print("poop")
             elif self.sessionType == "transient":
                 site = ShopifySite.objects.get(shopHost=self.sessionKey)
                 session["shopify"] = {
@@ -93,7 +99,7 @@ class LoginProtection(object):
                     "shopId":site.id,
                     "access_token":site.token()
                 }
-                print(f"shopifySite {str(session["shopify"])}")
+                
         
         if session.get("shopify") is not None:
             session["shopify"]["shop_url"] = session["shopify"]["shop_url"].split("/")[0]
